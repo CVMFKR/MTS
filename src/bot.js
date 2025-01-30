@@ -10,7 +10,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({ dataPath: '' }),
     puppeteer: {
         headless: true,
         args: [
@@ -22,6 +22,19 @@ const client = new Client({
         ],
         executablePath: process.env.CHROMIUM_PATH || null
     }
+});
+
+client.on('qr', qr => {
+    console.log('🚀 QR recibido, generando...');
+    qrcode.generate(qr, { small: true });
+});
+
+client.on('ready', () => {
+    console.log('✅ Cliente listo!');
+});
+
+client.on('auth_failure', () => {
+    console.log('⚠️ Error de autenticación');
 });
 
 client.on('message', async msg => {
