@@ -11,17 +11,17 @@ const port = process.env.PORT || 3000;
 
 const client = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: { headless: true }
-});
-
-app.get('/', (req, res) => res.send('🤖 Bot en funcionamiento!'));
-app.listen(port, () => console.log(`Servidor iniciado en puerto ${port}`));
-
-client.on('qr', qr => qrcode.generate(qr, { small: true }));
-
-client.on('ready', () => {
-    console.log('✅ Cliente listo!');
-    require('./utils/scheduler')(client);
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--single-process',
+            '--no-zygote'
+        ],
+        executablePath: process.env.CHROMIUM_PATH || null
+    }
 });
 
 client.on('message', async msg => {
