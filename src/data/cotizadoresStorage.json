@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "user": "cam.reyesmora@gmail.com",
+    "password": "cotizador1",
+    "available": true,
+    "assignedTo": null
+  },
+  {
+    "id": 2,
+    "user": "naranjo.paula.ps@gmail.com",
+    "password": "cotizador2",
+    "available": true,
+    "assignedTo": null
+  },
+  {
+    "id": 3,
+    "user": "freyes.mora@gmail.com",
+    "password": "cotizador3",
+    "available": true,
+    "assignedTo": null
+  }
+]
