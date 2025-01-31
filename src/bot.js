@@ -3,11 +3,14 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 const schedule = require('node-schedule');
-const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData'); // Modificado
+const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Mapa para rastrear estado de los usuarios
+const waitingForBenefitNumber = new Map();
 
 const client = new Client({
     authStrategy: new LocalAuth({ dataPath: '' }),
@@ -24,6 +27,11 @@ const client = new Client({
     }
 });
 
+// Configuración del servidor web
+app.get('/', (req, res) => res.send('🤖 Bot en funcionamiento!'));
+app.listen(port, () => console.log(`Servidor iniciado en puerto ${port}`));
+
+// Manejo de QR
 client.on('qr', qr => {
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr)}`;
     console.log('🔗 Escanea este QR:', qrImageUrl);
@@ -31,6 +39,7 @@ client.on('qr', qr => {
 
 client.on('ready', () => {
     console.log('✅ Cliente listo!');
+    require('./utils/scheduler')(client);
 });
 
 client.on('auth_failure', () => {
@@ -38,21 +47,43 @@ client.on('auth_failure', () => {
 });
 
 client.on('message', async msg => {
-    const text = msg.body.toLowerCase();
+    const text = msg.body.toLowerCase().trim();
     
-    // Nuevo comando para obtener ID del grupo
+    // Comando para obtener ID del grupo
     if(text.includes('@groupid')) {
         const chat = await msg.getChat();
         msg.reply(`🔑 ID del grupo: ${chat.id._serialized}`);
         return;
     }
     
-    if(text.includes('@cotizador')) {
-        handleCotizadores(msg);
-    }
-    
+    // Manejo de beneficios
     if(text.includes('@beneficios')) {
         handleBenefits(msg);
+        waitingForBenefitNumber.set(msg.from, true);
+        return;
+    }
+    
+    // Manejo de selección numérica
+    if(!isNaN(text) && waitingForBenefitNumber.get(msg.from)) {
+        const number = parseInt(text);
+        
+        if(number < 1 || number > 6) {
+            msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al 6.');
+            waitingForBenefitNumber.delete(msg.from);
+            return;
+        }
+        
+        const benefit = benefits[number];
+        if(benefit) {
+            msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
+        }
+        waitingForBenefitNumber.delete(msg.from);
+        return;
+    }
+    
+    // Otros comandos
+    if(text.includes('@cotizador')) {
+        handleCotizadores(msg);
     }
     
     if(text.includes('@turnos')) {
@@ -68,7 +99,7 @@ function handleCotizadores(msg) {
         if(cotizador) {
             cotizador.available = true;
             cotizador.assignedTo = null;
-            saveData(); // Persistencia al liberar
+            saveData();
             msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
         }
         return;
@@ -82,7 +113,7 @@ function handleCotizadores(msg) {
     const assigned = available[0];
     assigned.available = false;
     assigned.assignedTo = user;
-    saveData(); // Persistencia al asignar
+    saveData();
     
     const response = `*Cotizadores Mejora Tu Salud* 🏥💻\n\n` +
         cotizadores.map(c => 
@@ -96,18 +127,18 @@ function handleCotizadores(msg) {
     msg.reply(response);
 }
 
-// Lógica para beneficios
 function handleBenefits(msg) {
-    const options = `Selecciona una opción:\n\n` +
-        `1. Beneficios BANMEDICA 🏥\n` +
-        `2. Beneficios CONSALUD 🏥\n` +
-        // ... agregar otras opciones
-        `6. Beneficios VIDA TRES 🏥`;
+    const options = `Selecciona una opción (responde con el número):\n\n` +
+        `1. BANMEDICA 🏥\n` +
+        `2. CONSALUD 🏥\n` +
+        `3. ESENCIAL 🏥\n` +
+        `4. NUEVA MAS VIDA 🏥\n` +
+        `5. COLMENA 🏥\n` +
+        `6. VIDA TRES 🏥`;
     
     msg.reply(options);
 }
 
-// Función para turnos
 function sendTurnosMessage(msg) {
     const response = `📅 *Información sobre Turnos* 📅\n\n` +
         `• La toma de turnos se realiza los SÁBADO a las 18:00 hrs 🇨🇱\n` +
