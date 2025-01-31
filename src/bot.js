@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
+const axios = require('axios');
 const schedule = require('node-schedule');
 const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
@@ -11,6 +12,7 @@ const port = process.env.PORT || 3000;
 
 // Mapa para rastrear estado de los usuarios
 const waitingForBenefitNumber = new Map();
+const aiCooldown = new Set();
 
 const client = new Client({
     authStrategy: new LocalAuth({ dataPath: '' }),
@@ -49,6 +51,12 @@ client.on('auth_failure', () => {
 client.on('message', async msg => {
     const text = msg.body.toLowerCase().trim();
     
+    // Comando IA
+    if(text.startsWith('@ia ')) {
+        handleIACommand(msg);
+        return;
+    }
+    
     // Comando para obtener ID del grupo
     if(text.includes('@groupid')) {
         const chat = await msg.getChat();
@@ -65,19 +73,7 @@ client.on('message', async msg => {
     
     // Manejo de selección numérica
     if(!isNaN(text) && waitingForBenefitNumber.get(msg.from)) {
-        const number = parseInt(text);
-        
-        if(number < 1 || number > 6) {
-            msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al 6.');
-            waitingForBenefitNumber.delete(msg.from);
-            return;
-        }
-        
-        const benefit = benefits[number];
-        if(benefit) {
-            msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
-        }
-        waitingForBenefitNumber.delete(msg.from);
+        handleBenefitSelection(msg, text);
         return;
     }
     
@@ -90,6 +86,69 @@ client.on('message', async msg => {
         sendTurnosMessage(msg);
     }
 });
+
+// Función para manejar comandos de IA
+async function handleIACommand(msg) {
+    if(aiCooldown.has(msg.from)) {
+        msg.reply('⌛ Por favor espera 20 segundos entre consultas.');
+        return;
+    }
+    
+    aiCooldown.add(msg.from);
+    setTimeout(() => aiCooldown.delete(msg.from), 20000);
+    
+    const pregunta = msg.body.slice(4).trim();
+    
+    try {
+        const respuesta = await consultarOpenAI(pregunta);
+        msg.reply(`🤖 *Respuesta IA:*\n\n${respuesta}`);
+    } catch (error) {
+        console.error('Error OpenAI:', error.response?.data || error.message);
+        msg.reply('⚠️ Error al procesar tu consulta. Intenta más tarde.');
+    }
+}
+
+// Función para consultar OpenAI
+async function consultarOpenAI(pregunta) {
+    const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+            model: "gpt-3.5-turbo",
+            messages: [{
+                role: "user",
+                content: `Responde en español de forma clara, concisa y precisa (máximo 150 palabras). Contexto: seguros de salud en Chile. Pregunta: ${pregunta}`
+            }],
+            temperature: 0.3,
+            max_tokens: 300
+        },
+        {
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        }
+    );
+
+    let respuesta = response.data.choices[0].message.content;
+    return respuesta.length > 1500 ? respuesta.substring(0, 1497) + '...' : respuesta;
+}
+
+// Función para manejar selección de beneficios
+function handleBenefitSelection(msg, text) {
+    const number = parseInt(text);
+    
+    if(number < 1 || number > 6) {
+        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al 6.');
+        waitingForBenefitNumber.delete(msg.from);
+        return;
+    }
+    
+    const benefit = benefits[number];
+    if(benefit) {
+        msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
+    }
+    waitingForBenefitNumber.delete(msg.from);
+}
 
 function handleCotizadores(msg) {
     const user = msg.from;
@@ -116,15 +175,19 @@ function handleCotizadores(msg) {
     saveData();
     
     const response = `*Cotizadores Mejora Tu Salud* 🏥💻\n\n` +
+        `*Cotizador asignado:* ${assigned.id} ✅\n` +
+        `*Usuario:* ${assigned.user}\n` +
+        `*Contraseña:* ${assigned.password}\n\n` +
         cotizadores.map(c => 
             `${c.id}: ${c.user} / ${c.password} ${c.available ? '✅' : '❌'}`
         ).join('\n') +
-        `\n\n*Cotizador asignado:* ${assigned.id}\n` +
-        `Usuario: ${assigned.user}\nContraseña: ${assigned.password}\n\n` +
-        `*Cotizador BICEVIDA*\nUsuario: ${bicevida.user} - Contraseña: ${bicevida.password}\n\n` +
-        `Usa @cotizadoroff para liberarlo! 😊`;
-    
+        `\n\nUsa @cotizadoroff para liberarlo! 😊\n\n` +
+        `---------------------------------------\n` +
+        `*Cotizador BICEVIDA*\n` +
+        `Usuario: ${bicevida.user} - Contraseña: ${bicevida.password}\n`;
+
     msg.reply(response);
+
 }
 
 function handleBenefits(msg) {
