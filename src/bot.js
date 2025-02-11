@@ -248,7 +248,7 @@ function handleCotizadores(msg) {
         if (cotizador) {
             cotizador.available = true;
             cotizador.assignedTo = null;
-            saveData();
+            saveData(); // Guarda los cambios en el archivo
             msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
         }
         return;
@@ -262,7 +262,17 @@ function handleCotizadores(msg) {
     const assigned = available[0];
     assigned.available = false;
     assigned.assignedTo = user;
-    saveData();
+
+    // Encuentra el índice del cotizador asignado en el array cotizadores
+    const cotizadorIndex = cotizadores.findIndex(c => c.id === assigned.id);
+
+    // Actualiza la información del cotizador EN EL ARRAY cotizadores
+    if (cotizadorIndex !== -1) {
+        cotizadores[cotizadorIndex].available = false;
+        cotizadores[cotizadorIndex].assignedTo = user;
+    }
+
+    saveData(); // Guarda los cambios en el archivo después de actualizar el array
 
     let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
 
@@ -274,9 +284,10 @@ function handleCotizadores(msg) {
     mensaje += `---------------------------------------\n\n`;
     mensaje += `*Estado de Cotizadores:* \n\n`;
 
+    // Itera sobre el array cotizadores PARA MOSTRAR LA INFORMACIÓN CORRECTA
     cotizadores.forEach(cotizador => {
-        mensaje += `${cotizador.available ? '✅' : '❌'} *Cotizador ${cotizador.id}:* `;
-        mensaje += `${cotizador.assignedTo || 'Disponible'} / ${cotizador.password || ''}\n`;
+        mensaje += `${cotizador.available ? '❌' : '✅'} *Cotizador ${cotizador.id}:* `;
+        mensaje += `${cotizador.user} / ${cotizador.password}\n`; // Muestra user y password desde el array
     });
 
     mensaje += `\n---------------------------------------\n\n`;
@@ -285,7 +296,6 @@ function handleCotizadores(msg) {
     mensaje += `- Contraseña: ${bicevida.password}`;
 
     msg.reply(mensaje);
-
 }
 
 
