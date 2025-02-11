@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
-const axios = require('axios');
+const fetch = require('node-fetch'); // Importa node-fetch
 const schedule = require('node-schedule');
 const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
@@ -100,48 +100,51 @@ client.on('message', async msg => {
 
 // Función para manejar comandos de IA
 async function handleIACommand(msg) {
-    if(aiCooldown.has(msg.from)) {
+    if (aiCooldown.has(msg.from)) {
         msg.reply('⌛ Por favor espera 20 segundos entre consultas.');
         return;
     }
-    
+
     aiCooldown.add(msg.from);
     setTimeout(() => aiCooldown.delete(msg.from), 20000);
-    
+
     const pregunta = msg.body.slice(4).trim();
-    
+
     try {
-        const respuesta = await consultarOpenAI(pregunta);
-        msg.reply(`🤖 *Respuesta IA:*\n\n${respuesta}`);
+        const respuesta = await consultarDeepSeek(pregunta); // Llama a la nueva función
+        msg.reply(` *Respuesta IA:*\n\n${respuesta}`);
     } catch (error) {
-        console.error('Error OpenAI:', error.response?.data || error.message);
+        console.error('Error DeepSeek:', error); // Maneja errores de DeepSeek
         msg.reply('⚠️ Error al procesar tu consulta. Intenta más tarde.');
     }
-}
+}   
 
-// Función para consultar OpenAI
-async function consultarOpenAI(pregunta) {
-    const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-            model: "gpt-3.5-turbo",
-            messages: [{
-                role: "user",
-                content: `Responde en español de forma clara, concisa y precisa (máximo 150 palabras). Contexto: seguros de salud en Chile. Pregunta: ${pregunta}`
-            }],
-            temperature: 0.3,
-            max_tokens: 200
+// Función para consultar DeepSeek (nueva función)
+async function consultarDeepSeek(pregunta) {
+    const response = await fetch('https://api.deepseek.ai/v1/chat/completions', { // URL de DeepSeek
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}` // API Key desde variables de entorno
         },
-        {
-            headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        }
-    );
+        body: JSON.stringify({
+            model: 'deepseek-chat', // Modelo de DeepSeek (ajusta si es necesario)
+            messages: [{ role: 'user', content: pregunta }], // Formato de mensaje para DeepSeek
+            max_tokens: 300, // Ajusta los parámetros según DeepSeek
+            temperature: 0.3,
+        }),
+    });
 
-    let respuesta = response.data.choices[0].message.content;
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Error en la solicitud a DeepSeek: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+    }
+
+    const data = await response.json();
+    let respuesta = data.choices[0].message.content;
+
     return respuesta.length > 1500 ? respuesta.substring(0, 1497) + '...' : respuesta;
+
 }
 
 // Función para manejar selección de beneficios
