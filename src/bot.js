@@ -286,7 +286,7 @@ function handleCotizadores(msg) {
 
     // Itera sobre el array cotizadores PARA MOSTRAR LA INFORMACIÓN CORRECTA
     cotizadores.forEach(cotizador => {
-        mensaje += `${cotizador.available ? '❌' : '✅'} *Cotizador ${cotizador.id}:* `;
+        mensaje += `${cotizador.available ? '✅' : '❌'} *Cotizador ${cotizador.id}:* `;
         mensaje += `${cotizador.user} / ${cotizador.password}\n`; // Muestra user y password desde el array
     });
 
