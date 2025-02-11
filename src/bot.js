@@ -178,7 +178,7 @@ function handleCotizadores(msg) {
         if (cotizador) {
             cotizador.available = true;
             cotizador.assignedTo = null;
-            saveData();
+            saveData(); // Guarda los cambios en el archivo
             msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
         }
         return;
@@ -193,37 +193,39 @@ function handleCotizadores(msg) {
     assigned.available = false;
     assigned.assignedTo = user;
 
-    // Actualizar la información del cotizador en el array cotizadores
+    // Encuentra el índice del cotizador asignado en el array cotizadores
     const cotizadorIndex = cotizadores.findIndex(c => c.id === assigned.id);
+
+    // Actualiza la información del cotizador EN EL ARRAY cotizadores
     if (cotizadorIndex !== -1) {
         cotizadores[cotizadorIndex].available = false;
         cotizadores[cotizadorIndex].assignedTo = user;
     }
 
-    saveData();
+    saveData(); // Guarda los cambios en el archivo después de actualizar el array
 
     let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
 
-    mensaje += `*Cotizador asignado: ${assigned.id}* ✅\n`;
+    mensaje += `Cotizador asignado: ${assigned.id} ✅\n`;
     mensaje += `⭐ Usuario: ${assigned.user}\n`;
     mensaje += `⭐ Contraseña: ${assigned.password}\n\n`;
     mensaje += `Usa @cotizadoroff para liberarlo! \n\n`;
 
     mensaje += `---------------------------------------\n\n`;
-    mensaje += `*Estado de Cotizadores:* \n\n`;
+    mensaje += `Estado de Cotizadores: \n\n`;
 
-    // Mostrar la información de los cotizadores directamente desde el array actualizado
-    mensaje += `${cotizadores[0].available ? '❌' : '✅'} *Cotizador 1:* ${cotizadores[0].user} / ${cotizadores[0].password}\n`;
-    mensaje += `${cotizadores[1].available ? '❌' : '✅'} *Cotizador 2:* ${cotizadores[1].user} / ${cotizadores[1].password}\n`;
-    mensaje += `${cotizadores[2].available ? '❌' : '✅'} *Cotizador 3:* ${cotizadores[2].user} / ${cotizadores[2].password}\n`;
+    // Itera sobre el array cotizadores PARA MOSTRAR SOLO LA DISPONIBILIDAD
+    cotizadores.forEach(cotizador => {
+        mensaje += `${cotizador.available ? '✅' : '❌'} Cotizador ${cotizador.id}: `;
+        mensaje += `${cotizador.available ? 'Disponible' : 'Ocupado'}\n`; // Muestra solo la disponibilidad
+    });
 
     mensaje += `\n---------------------------------------\n\n`;
-    mensaje += `*Cotizador BICEVIDA:* \n`;
+    mensaje += `Cotizador BICEVIDA: \n`;
     mensaje += `- Usuario: ${bicevida.user}\n`;
     mensaje += `- Contraseña: ${bicevida.password}`;
 
     msg.reply(mensaje);
-
 }
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
