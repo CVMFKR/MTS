@@ -2,13 +2,20 @@ require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
-const fetch = require('node-fetch'); // Importa node-fetch
+const { Configuration, OpenAIApi } = require("openai"); // Importa OpenAI
 const schedule = require('node-schedule');
 const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Configuración de la API de DeepSeek (¡Aquí debes configurar tu API Key en Railway!)
+const configuration = new Configuration({
+    baseURL: 'https://api.deepseek.com', // URL base de DeepSeek
+    apiKey: process.env.DEEPSEEK_API_KEY, // API Key desde variables de entorno (¡Configura esto en Railway!)
+});
+const openai = new OpenAIApi(configuration); // Crea instancia de OpenAI con la configuración de DeepSeek
 
 // Mapa para rastrear estado de los usuarios
 const waitingForBenefitNumber = new Map();
@@ -27,6 +34,7 @@ const client = new Client({
         ],
         executablePath: process.env.CHROMIUM_PATH || null
     }
+
 });
 
 // Configuración del servidor web
@@ -97,6 +105,47 @@ client.on('message', async msg => {
         return;
     }
 });
+
+// Función para manejar comandos de IA (modificada para DeepSeek)
+async function handleIACommand(msg) {
+    if (aiCooldown.has(msg.from)) {
+        msg.reply('⌛ Por favor espera 20 segundos entre consultas.');
+        return;
+    }
+
+    aiCooldown.add(msg.from);
+    setTimeout(() => aiCooldown.delete(msg.from), 20000);
+
+    const pregunta = msg.body.slice(4).trim();
+
+    try {
+        const respuesta = await consultarDeepSeek(pregunta); // Llama a la nueva función
+        msg.reply(` *Respuesta IA:*\n\n${respuesta}`);
+    } catch (error) {
+        console.error('Error DeepSeek:', error); // Maneja errores de DeepSeek
+        msg.reply('⚠️ Error al procesar tu consulta. Intenta más tarde.');
+    }
+}
+
+// Función para consultar DeepSeek (nueva función)
+async function consultarDeepSeek(pregunta) {
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "deepseek-reasoner", // Modelo de razonamiento DeepSeek-R1
+            messages: [{ role: "user", content: pregunta }], // Formato de mensaje para DeepSeek
+            max_tokens: 300, // Ajusta los parámetros según DeepSeek
+            temperature: 0.3,
+        });
+
+        let respuesta = completion.choices[0].message.content; // Accede a la respuesta desde completion.choices
+
+        return respuesta.length > 1500 ? respuesta.substring(0, 1497) + '...' : respuesta;
+
+    } catch (error) {
+        console.error("Error en la solicitud a DeepSeek:", error);
+        throw error; // Re-lanza el error para que se maneje en handleIACommand
+    }
+}
 
 // Función para manejar comandos de IA
 async function handleIACommand(msg) {
