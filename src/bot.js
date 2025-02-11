@@ -30,13 +30,13 @@ const client = new Client({
 });
 
 // Configuración del servidor web
-app.get('/', (req, res) => res.send('🤖 Bot en funcionamiento!'));
+app.get('/', (req, res) => res.send(' Bot en funcionamiento!'));
 app.listen(port, () => console.log(`Servidor iniciado en puerto ${port}`));
 
 // Manejo de QR
 client.on('qr', qr => {
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr)}`;
-    console.log('🔗 Escanea este QR:', qrImageUrl);
+    console.log(' Escanea este QR:', qrImageUrl);
 });
 
 client.on('ready', () => {
@@ -50,40 +50,51 @@ client.on('auth_failure', () => {
 
 client.on('message', async msg => {
     const text = msg.body.toLowerCase().trim();
-    
+
     // Comando IA
-    if(text.startsWith('@ia ')) {
+    if (text.startsWith('@ia ')) {
         handleIACommand(msg);
         return;
     }
-    
+
     // Comando para obtener ID del grupo
-    if(text.includes('@groupid')) {
+    if (text.includes('@groupid')) {
         const chat = await msg.getChat();
-        msg.reply(`🔑 ID del grupo: ${chat.id._serialized}`);
+        msg.reply(` ID del grupo: ${chat.id._serialized}`);
         return;
     }
-    
+
     // Manejo de beneficios
-    if(text.includes('@beneficios')) {
+    if (text.includes('@beneficios')) {
         handleBenefits(msg);
         waitingForBenefitNumber.set(msg.from, true);
         return;
     }
-    
+
     // Manejo de selección numérica
-    if(!isNaN(text) && waitingForBenefitNumber.get(msg.from)) {
+    if (!isNaN(text) && waitingForBenefitNumber.get(msg.from)) {
         handleBenefitSelection(msg, text);
         return;
     }
-    
+
     // Otros comandos
-    if(text.includes('@cotizador')) {
+    if (text.includes('@cotizador')) {
         handleCotizadores(msg);
     }
-    
-    if(text.includes('@turnos')) {
+
+    if (text.includes('@turnos')) {
         sendTurnosMessage(msg);
+    }
+
+    // Comando para liberar todos los cotizadores
+    if (text === '@liberarcotizador') {
+        cotizadores.forEach(cotizador => {
+            cotizador.available = true;
+            cotizador.assignedTo = null;
+        });
+        saveData();
+        msg.reply('¡Todos los cotizadores han sido liberados!');
+        return;
     }
 });
 
@@ -212,5 +223,54 @@ function sendTurnosMessage(msg) {
     
     msg.reply(response);
 }
+
+function handleCotizadores(msg) {
+    const user = msg.from;
+
+    if (msg.body.includes('@cotizadoroff')) {
+        const cotizador = cotizadores.find(c => c.assignedTo === user);
+        if (cotizador) {
+            cotizador.available = true;
+            cotizador.assignedTo = null;
+            saveData();
+            msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
+        }
+        return;
+    }
+
+    const available = cotizadores.filter(c => c.available);
+    if (available.length === 0) {
+        return msg.reply('⚠️ Lo siento, no hay cotizadores disponibles en este momento.');
+    }
+
+    const assigned = available[0];
+    assigned.available = false;
+    assigned.assignedTo = user;
+    saveData();
+
+    let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
+
+    mensaje += `*Cotizador asignado: ${assigned.id}* ✅\n`;
+    mensaje += `⭐ Usuario: ${assigned.user}\n`;
+    mensaje += `⭐ Contraseña: ${assigned.password}\n\n`;
+    mensaje += `Usa @cotizadoroff para liberarlo! \n\n`;
+
+    mensaje += `---------------------------------------\n\n`;
+    mensaje += `*Estado de Cotizadores:* \n\n`;
+
+    cotizadores.forEach(cotizador => {
+        mensaje += `${cotizador.available ? '✅' : '❌'} *Cotizador ${cotizador.id}:* `;
+        mensaje += `${cotizador.assignedTo || 'Disponible'} / ${cotizador.password || ''}\n`;
+    });
+
+    mensaje += `\n---------------------------------------\n\n`;
+    mensaje += `*Cotizador BICEVIDA:* \n`;
+    mensaje += `- Usuario: ${bicevida.user}\n`;
+    mensaje += `- Contraseña: ${bicevida.password}`;
+
+    msg.reply(mensaje);
+
+}
+
 
 client.initialize();
