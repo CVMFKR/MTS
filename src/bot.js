@@ -130,7 +130,7 @@ async function consultarOpenAI(pregunta) {
                 content: `Responde en español de forma clara, concisa y precisa (máximo 150 palabras). Contexto: seguros de salud en Chile. Pregunta: ${pregunta}`
             }],
             temperature: 0.3,
-            max_tokens: 300
+            max_tokens: 200
         },
         {
             headers: {
@@ -163,10 +163,10 @@ function handleBenefitSelection(msg, text) {
 
 function handleCotizadores(msg) {
     const user = msg.from;
-    
-    if(msg.body.includes('@cotizadoroff')) {
+
+    if (msg.body.includes('@cotizadoroff')) {
         const cotizador = cotizadores.find(c => c.assignedTo === user);
-        if(cotizador) {
+        if (cotizador) {
             cotizador.available = true;
             cotizador.assignedTo = null;
             saveData();
@@ -174,30 +174,38 @@ function handleCotizadores(msg) {
         }
         return;
     }
-    
+
     const available = cotizadores.filter(c => c.available);
-    if(available.length === 0) {
+    if (available.length === 0) {
         return msg.reply('⚠️ Lo siento, no hay cotizadores disponibles en este momento.');
     }
-    
+
     const assigned = available[0];
     assigned.available = false;
     assigned.assignedTo = user;
     saveData();
-    
-    const response = `*Cotizadores Mejora Tu Salud* 🏥💻\n\n` +
-        `*Cotizador asignado:* ${assigned.id} ✅\n` +
-        `*Usuario:* ${assigned.user}\n` +
-        `*Contraseña:* ${assigned.password}\n\n` +
-        cotizadores.map(c => 
-            `${c.id}: ${c.user} / ${c.password} ${c.available ? '✅' : '❌'}`
-        ).join('\n') +
-        `\n\nUsa @cotizadoroff para liberarlo! 😊\n\n` +
-        `---------------------------------------\n` +
-        `*Cotizador BICEVIDA*\n` +
-        `Usuario: ${bicevida.user} - Contraseña: ${bicevida.password}\n`;
 
-    msg.reply(response);
+    let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
+
+    mensaje += `*Cotizador asignado: ${assigned.id}* ✅\n`;
+    mensaje += `⭐ Usuario: ${assigned.user}\n`;
+    mensaje += `⭐ Contraseña: ${assigned.password}\n\n`;
+    mensaje += `Usa @cotizadoroff para liberarlo! \n\n`;
+
+    mensaje += `---------------------------------------\n\n`;
+    mensaje += `*Estado de Cotizadores:* \n\n`;
+
+    cotizadores.forEach(cotizador => {
+        mensaje += `${cotizador.available ? '❌' : '✅'} *Cotizador ${cotizador.id}:* `;
+        mensaje += `${cotizador.user} / ${cotizador.password}\n`; // Mostrar ID fija
+    });
+
+    mensaje += `\n---------------------------------------\n\n`;
+    mensaje += `*Cotizador BICEVIDA:* \n`;
+    mensaje += `- Usuario: ${bicevida.user}\n`;
+    mensaje += `- Contraseña: ${bicevida.password}`;
+
+    msg.reply(mensaje);
 
 }
 
