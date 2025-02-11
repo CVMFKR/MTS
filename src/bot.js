@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
-const { Configuration, OpenAIApi } = require("openai"); // Importa OpenAI
+// ELIMINADO: Importación incorrecta de OpenAI, ya no la necesitamos para Deepseek
 const schedule = require('node-schedule');
 const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
@@ -10,12 +10,8 @@ const benefits = require('./data/benefitsData');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuración de la API de DeepSeek (¡Aquí debes configurar tu API Key en Railway!)
-const configuration = new Configuration({
-    baseURL: 'https://api.deepseek.com', // URL base de DeepSeek
-    apiKey: process.env.DEEPSEEK_API_KEY, // API Key desde variables de entorno (¡Configura esto en Railway!)
-});
-const openai = new OpenAIApi(configuration); // Crea instancia de OpenAI con la configuración de DeepSeek
+// ELIMINADO: Configuración de la API de DeepSeek con Configuration de OpenAI (¡INCORRECTO!)
+// Ahora usaremos fetch directamente, la API Key se usará en la función consultarDeepSeek
 
 // Mapa para rastrear estado de los usuarios
 const waitingForBenefitNumber = new Map();
@@ -127,60 +123,19 @@ async function handleIACommand(msg) {
     }
 }
 
-// Función para consultar DeepSeek (nueva función)
+// Función para consultar DeepSeek (nueva función - AHORA CORRECTA CON FETCH)
 async function consultarDeepSeek(pregunta) {
-    try {
-        const completion = await openai.chat.completions.create({
-            model: "deepseek-reasoner", // Modelo de razonamiento DeepSeek-R1
-            messages: [{ role: "user", content: pregunta }], // Formato de mensaje para DeepSeek
-            max_tokens: 300, // Ajusta los parámetros según DeepSeek
-            temperature: 0.3,
-        });
-
-        let respuesta = completion.choices[0].message.content; // Accede a la respuesta desde completion.choices
-
-        return respuesta.length > 1500 ? respuesta.substring(0, 1497) + '...' : respuesta;
-
-    } catch (error) {
-        console.error("Error en la solicitud a DeepSeek:", error);
-        throw error; // Re-lanza el error para que se maneje en handleIACommand
-    }
-}
-
-// Función para manejar comandos de IA
-async function handleIACommand(msg) {
-    if (aiCooldown.has(msg.from)) {
-        msg.reply('⌛ Por favor espera 20 segundos entre consultas.');
-        return;
-    }
-
-    aiCooldown.add(msg.from);
-    setTimeout(() => aiCooldown.delete(msg.from), 20000);
-
-    const pregunta = msg.body.slice(4).trim();
-
-    try {
-        const respuesta = await consultarDeepSeek(pregunta); // Llama a la nueva función
-        msg.reply(` *Respuesta IA:*\n\n${respuesta}`);
-    } catch (error) {
-        console.error('Error DeepSeek:', error); // Maneja errores de DeepSeek
-        msg.reply('⚠️ Error al procesar tu consulta. Intenta más tarde.');
-    }
-}   
-
-// Función para consultar DeepSeek (nueva función)
-async function consultarDeepSeek(pregunta) {
-    const response = await fetch('https://api.deepseek.ai/v1/chat/completions', { // URL de DeepSeek
+    const response = await fetch('https://api.deepseek.ai/v1/chat/completions', { // URL de DeepSeek (CORRECTA)
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}` // API Key desde variables de entorno
+            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}` // API Key desde variables de entorno (¡IMPORTANTE!)
         },
         body: JSON.stringify({
-            model: 'deepseek-chat', // Modelo de DeepSeek (ajusta si es necesario)
+            model: 'deepseek-chat', // Modelo de DeepSeek (puedes cambiarlo según la documentación)
             messages: [{ role: 'user', content: pregunta }], // Formato de mensaje para DeepSeek
-            max_tokens: 300, // Ajusta los parámetros según DeepSeek
-            temperature: 0.3,
+            max_tokens: 300, // Ajusta los parámetros según la documentación de Deepseek
+            temperature: 0.3, // Ajusta los parámetros según la documentación de Deepseek
         }),
     });
 
@@ -196,16 +151,17 @@ async function consultarDeepSeek(pregunta) {
 
 }
 
-// Función para manejar selección de beneficios
+
+// Función para manejar selección de beneficios (SIN CAMBIOS)
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
-    
+
     if(number < 1 || number > 6) {
         msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al 6.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
-    
+
     const benefit = benefits[number];
     if(benefit) {
         msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
@@ -213,6 +169,7 @@ function handleBenefitSelection(msg, text) {
     waitingForBenefitNumber.delete(msg.from);
 }
 
+// Función para manejar comandos de cotizadores (SIN CAMBIOS)
 function handleCotizadores(msg) {
     const user = msg.from;
 
@@ -269,6 +226,7 @@ function handleCotizadores(msg) {
 
 }
 
+// Función para manejar el comando de beneficios (SIN CAMBIOS)
 function handleBenefits(msg) {
     const options = `Selecciona una opción (responde con el número):\n\n` +
         `1. BANMEDICA 🏥\n` +
@@ -277,10 +235,11 @@ function handleBenefits(msg) {
         `4. NUEVA MAS VIDA 🏥\n` +
         `5. COLMENA 🏥\n` +
         `6. VIDA TRES 🏥`;
-    
+
     msg.reply(options);
 }
 
+// Función para enviar mensaje de turnos (SIN CAMBIOS)
 function sendTurnosMessage(msg) {
     const response = `📅 *Información sobre Turnos* 📅\n\n` +
         `• La toma de turnos se realiza los SÁBADO a las 18:00 hrs 🇨🇱\n` +
@@ -288,67 +247,12 @@ function sendTurnosMessage(msg) {
         `• Revisar horario con tu coordinador\n` +
         `• Los leads se trabajan el día de carga 📝\n\n` +
         `Link para turnos: https://1drv.ms/x/s!AjucDJ3soG62hJh0vkRRsYyH0sDOzw?e=uet2cJ`;
-    
+
     msg.reply(response);
 }
 
-function handleCotizadores(msg) {
-    const user = msg.from;
-
-    if (msg.body.includes('@cotizadoroff')) {
-        const cotizador = cotizadores.find(c => c.assignedTo === user);
-        if (cotizador) {
-            cotizador.available = true;
-            cotizador.assignedTo = null;
-            saveData(); // Guarda los cambios en el archivo
-            msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
-        }
-        return;
-    }
-
-    const available = cotizadores.filter(c => c.available);
-    if (available.length === 0) {
-        return msg.reply('⚠️ Lo siento, no hay cotizadores disponibles en este momento.');
-    }
-
-    const assigned = available[0];
-    assigned.available = false;
-    assigned.assignedTo = user;
-
-    // Encuentra el índice del cotizador asignado en el array cotizadores
-    const cotizadorIndex = cotizadores.findIndex(c => c.id === assigned.id);
-
-    // Actualiza la información del cotizador EN EL ARRAY cotizadores
-    if (cotizadorIndex !== -1) {
-        cotizadores[cotizadorIndex].available = false;
-        cotizadores[cotizadorIndex].assignedTo = user;
-    }
-
-    saveData(); // Guarda los cambios en el archivo después de actualizar el array
-
-    let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
-
-    mensaje += `*Cotizador asignado: ${assigned.id}* ✅\n`;
-    mensaje += `⭐ Usuario: ${assigned.user}\n`;
-    mensaje += `⭐ Contraseña: ${assigned.password}\n\n`;
-    mensaje += `Usa @cotizadoroff para liberarlo! \n\n`;
-
-    mensaje += `---------------------------------------\n\n`;
-    mensaje += `*Estado de Cotizadores:* \n\n`;
-
-    // Itera sobre el array cotizadores PARA MOSTRAR LA INFORMACIÓN CORRECTA
-    cotizadores.forEach(cotizador => {
-        mensaje += `${cotizador.available ? '✅' : '❌'} *Cotizador ${cotizador.id}:* `;
-        mensaje += `${cotizador.user} / ${cotizador.password}\n`; // Muestra user y password desde el array
-    });
-
-    mensaje += `\n---------------------------------------\n\n`;
-    mensaje += `*Cotizador BICEVIDA:* \n`;
-    mensaje += `- Usuario: ${bicevida.user}\n`;
-    mensaje += `- Contraseña: ${bicevida.password}`;
-
-    msg.reply(mensaje);
-}
+// Función para manejar comandos de cotizadores (REPETIDA - ELIMINAR LA DUPLICADA)
+// (He dejado solo una versión de handleCotizadores, las dos versiones hacían lo mismo)
 
 
 client.initialize();
