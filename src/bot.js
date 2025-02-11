@@ -203,7 +203,7 @@ function handleCotizadores(msg) {
     mensaje += `---------------------------------------\n\n`;
     mensaje += `*Estado de Cotizadores:* \n\n`;
 
-    // Mostrar la información de los cotizadores directamente
+    // Mostrar la información de los cotizadores directamente desde el array actualizado
     mensaje += `${cotizadores[0].available ? '❌' : '✅'} *Cotizador 1:* ${cotizadores[0].user} / ${cotizadores[0].password}\n`;
     mensaje += `${cotizadores[1].available ? '❌' : '✅'} *Cotizador 2:* ${cotizadores[1].user} / ${cotizadores[1].password}\n`;
     mensaje += `${cotizadores[2].available ? '❌' : '✅'} *Cotizador 3:* ${cotizadores[2].user} / ${cotizadores[2].password}\n`;
