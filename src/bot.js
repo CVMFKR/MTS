@@ -231,12 +231,12 @@ function handleCotizadores(msg) {
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
 function handleBenefits(msg) {
     const options = `Selecciona una opción (responde con el número):\n\n` +
-        `1. BANMEDICA 🏥\n` +
-        `2. CONSALUD 🏥\n` +
+        `1. CONSALUD 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
+        `2. BANMEDICA 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
         `3. ESENCIAL 🏥\n` +
-        `4. NUEVA MAS VIDA 🏥\n` +
-        `5. COLMENA 🏥\n` +
-        `6. VIDA TRES 🏥`;
+        `4. COLMENA 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
+        `5. VIDA TRES 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
+        `6. NUEVA MAS VIDA 🏥`; // ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
 
     msg.reply(options);
 }
