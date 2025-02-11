@@ -183,6 +183,14 @@ function handleCotizadores(msg) {
     const assigned = available[0];
     assigned.available = false;
     assigned.assignedTo = user;
+
+    // Actualizar la información del cotizador en el array cotizadores
+    const cotizadorIndex = cotizadores.findIndex(c => c.id === assigned.id);
+    if (cotizadorIndex !== -1) {
+        cotizadores[cotizadorIndex].available = false;
+        cotizadores[cotizadorIndex].assignedTo = user;
+    }
+
     saveData();
 
     let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
