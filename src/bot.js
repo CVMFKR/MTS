@@ -126,18 +126,27 @@ async function consultarDeepSeek(pregunta) {
     return respuesta.length > 1500 ? respuesta.substring(0, 1497) + '...' : respuesta;
 }
 
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
 
-    if (number < 1 || number > Object.keys(benefits).length) { // <-- Cambio importante aquí
-        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + Object.keys(benefits).length + '.');
+    if (number < 1 || number > Object.keys(benefits).length) {
+        msg.reply(' Opción inválida. Por favor responde con un número del 1 al ' + Object.keys(benefits).length + '.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
 
-    const benefit = benefits[number]; // <-- Y aquí
+    const benefit = benefits[number.toString()]; // <-- Convierte el número a cadena
     if (benefit) {
-        msg.reply(`*<span class="math-inline">\{benefit\.title\}\*\\n\\n</span>{benefit.content}`);
+        msg.reply(`*${benefit.title}*\n\n${escapeHtml(benefit.content)}`); // <-- Escapa el contenido HTML
     }
     waitingForBenefitNumber.delete(msg.from);
 }
@@ -208,9 +217,12 @@ function handleCotizadores(msg) {
 }
 
 function handleBenefits(msg) {
-    const options = `Selecciona una opción (responde con el número):\n\n` +
-        Object.keys(benefits).map(key => `${key}. ${benefits[key].title}`).join('\n');
-
+    let options = "Selecciona una opción (responde con el número):\n\n";
+    let i = 1;
+    for (const key in benefits) {
+        options += `${i}. ${benefits[key].title}\n`;
+        i++;
+    }
     msg.reply(options);
 }
 
