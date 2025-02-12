@@ -53,7 +53,9 @@ client.on('auth_failure', () => {
 });
 
 client.on('message', async msg => {
-    const text = msg.body.toLowerCase().trim();
+    let text = msg.body.toLowerCase().trim(); // Convertir a minúsculas y eliminar espacios
+
+    text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Eliminar acentos
 
     // Comando IA
     if (text.startsWith('@ia ')) {
@@ -156,30 +158,37 @@ async function consultarDeepSeek(pregunta) {
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
 
-    if(number < 1 || number > 6) {
+    if (number < 1 || number > 6) {
         msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al 6.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
 
-    const benefit = benefits[number];
-    if(benefit) {
+    const benefit = benefits[number - 1]; // ¡Aquí restamos 1 al número!
+    if (benefit) {
         msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
     }
     waitingForBenefitNumber.delete(msg.from);
 }
 
 // Función para manejar comandos de cotizadores (SIN CAMBIOS)
+
+const userCotizadorMap = new Map(); // Mapa para rastrear cotizadores asignados a usuarios
+
 function handleCotizadores(msg) {
     const user = msg.from;
 
     if (msg.body.includes('@cotizadoroff')) {
-        const cotizador = cotizadores.find(c => c.assignedTo === user);
-        if (cotizador) {
-            cotizador.available = true;
-            cotizador.assignedTo = null;
-            saveData(); // Guarda los cambios en el archivo
-            msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
+        const cotizadorId = userCotizadorMap.get(user);
+        if (cotizadorId) {
+            const cotizador = cotizadores.find(c => c.id === cotizadorId);
+            if (cotizador) {
+                cotizador.available = true;
+                cotizador.assignedTo = null;
+                saveData();
+                msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
+                userCotizadorMap.delete(user);
+            }
         }
         return;
     }
@@ -193,18 +202,19 @@ function handleCotizadores(msg) {
     assigned.available = false;
     assigned.assignedTo = user;
 
-    // Encuentra el índice del cotizador asignado en el array cotizadores
+    userCotizadorMap.set(user, assigned.id); // Asignación y registro del cotizador
+
     const cotizadorIndex = cotizadores.findIndex(c => c.id === assigned.id);
 
-    // Actualiza la información del cotizador EN EL ARRAY cotizadores
     if (cotizadorIndex !== -1) {
         cotizadores[cotizadorIndex].available = false;
         cotizadores[cotizadorIndex].assignedTo = user;
     }
 
-    saveData(); // Guarda los cambios en el archivo después de actualizar el array
+    saveData();
 
-    let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
+    let mensaje = `*Cotizadores Mejora Tu Salud*\n\n`;
+    mensaje += `[Iniciar Sesión](https://vendor.tu7.cl/account)\n\n`;
 
     mensaje += `Cotizador asignado: ${assigned.id} ✅\n`;
     mensaje += `⭐ Usuario: ${assigned.user}\n`;
@@ -214,10 +224,9 @@ function handleCotizadores(msg) {
     mensaje += `---------------------------------------\n\n`;
     mensaje += `Estado de Cotizadores: \n\n`;
 
-    // Itera sobre el array cotizadores PARA MOSTRAR SOLO LA DISPONIBILIDAD
     cotizadores.forEach(cotizador => {
         mensaje += `${cotizador.available ? '✅' : '❌'} Cotizador ${cotizador.id}: `;
-        mensaje += `${cotizador.available ? 'Disponible' : 'Ocupado'}\n`; // Muestra solo la disponibilidad
+        mensaje += `${cotizador.available ? 'Disponible' : 'Ocupado'}\n`;
     });
 
     mensaje += `\n---------------------------------------\n\n`;
