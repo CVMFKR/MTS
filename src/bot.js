@@ -5,6 +5,7 @@ const express = require('express');
 const schedule = require('node-schedule');
 const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
+console.log("Contenido de benefits:", benefits); // Imprime el contenido de benefits
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -50,7 +51,19 @@ client.on('auth_failure', () => {
 
 
 client.on('message', async msg => {
-    console.log("Mensaje recibido:", msg.body); // Para depuración
+    console.log("Mensaje recibido:", msg.body);
+    console.log("Remitente:", msg.from);
+    console.log("ID del chat:", msg.chatId);
+    console.log("¿Incluye @beneficios?:", msg.body.includes('@beneficios')); // Verifica si incluye el comando
+    console.log("Tipo de mensaje:", msg.type); // Imprime el tipo de mensaje
+    console.log("Estado del chat:", await msg.getChat()); // Imprime el estado del chat
+
+    if (msg.body.includes('@beneficios')) {
+        console.log("Comando @beneficios detectado");
+        msg.reply("¡Mensaje de prueba!"); // Mensaje de prueba
+        return;
+    }
+
     let text = msg.body.toLowerCase().trim();
     text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
