@@ -5,7 +5,7 @@ const express = require('express');
 const schedule = require('node-schedule');
 const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
-console.log("Contenido de benefits:", benefits); // Imprime el contenido de benefits
+console.log("Contenido de benefits:", benefits);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,9 +13,8 @@ const port = process.env.PORT || 3000;
 const waitingForBenefitNumber = new Map();
 const aiCooldown = new Set();
 
-// Configuración del cliente de WhatsApp Web
 const client = new Client({
-    authStrategy: new LocalAuth({ dataPath: '' }), // No necesitas especificar dataPath en Railway
+    authStrategy: new LocalAuth({ dataPath: '' }),
     puppeteer: {
         headless: true,
         args: [
@@ -25,19 +24,16 @@ const client = new Client({
             '--single-process',
             '--no-zygote'
         ],
-        executablePath: process.env.CHROMIUM_PATH || null // Importante para Railway
+        executablePath: process.env.CHROMIUM_PATH || null
     }
 });
 
-// Configuración del servidor web (para el QR y mantener el bot activo)
 app.get('/', (req, res) => res.send('Bot en funcionamiento!'));
 app.listen(port, () => console.log(`Servidor iniciado en puerto ${port}`));
 
-// Eventos del cliente de WhatsApp Web
 client.on('qr', qr => {
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr)}`;
     console.log('Escanea este QR:', qrImageUrl);
-    // En Railway, podrías mostrar esta URL en un panel web para facilitar el escaneo
 });
 
 client.on('ready', () => {
@@ -49,44 +45,28 @@ client.on('auth_failure', () => {
     console.log('⚠️ Error de autenticación');
 });
 
-
 client.on('message', async msg => {
     console.log("Mensaje recibido:", msg.body);
     console.log("Remitente:", msg.from);
     console.log("ID del chat:", msg.chatId);
-    console.log("¿Incluye @beneficios?:", msg.body.includes('@beneficios')); // Verifica si incluye el comando
-    console.log("Tipo de mensaje:", msg.type); // Imprime el tipo de mensaje
-    console.log("Estado del chat:", await msg.getChat()); // Imprime el estado del chat
+    console.log("¿Incluye @beneficios?:", msg.body.includes('@beneficios'));
+    console.log("Tipo de mensaje:", msg.type);
+    console.log("Estado del chat:", await msg.getChat());
 
-    if (msg.body.includes('@beneficios')) {
+    if (msg.body === '@beneficios') { // <-- Condición estricta (===)
         console.log("Comando @beneficios detectado");
+        await handleBenefits(msg); // <-- Llama a handleBenefits con await
         return;
     }
 
     let text = msg.body.toLowerCase().trim();
     text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    if (text.includes('@beneficios')) {
-        console.log("Comando @beneficios detectado"); // Para depuración
-        handleBenefits(msg);
-        waitingForBenefitNumber.set(msg.from, true);
-        return;
-    }
-
-    // Manejo de beneficios
-    if (text.includes('@beneficios')) {
-        handleBenefits(msg);
-        waitingForBenefitNumber.set(msg.from, true);
-        return;
-    }
-
-    // Manejo de selección numérica
     if (!isNaN(text) && waitingForBenefitNumber.get(msg.from)) {
         handleBenefitSelection(msg, text);
         return;
     }
 
-    // Otros comandos
     if (text.includes('@cotizador')) {
         handleCotizadores(msg);
     }
@@ -95,7 +75,6 @@ client.on('message', async msg => {
         sendTurnosMessage(msg);
     }
 
-    // Comando para liberar todos los cotizadores
     if (text === '@liberarcotizador') {
         cotizadores.forEach(cotizador => {
             cotizador.available = true;
@@ -107,7 +86,6 @@ client.on('message', async msg => {
     }
 });
 
-// Función para manejar comandos de IA (modificada para DeepSeek)
 async function handleIACommand(msg) {
     if (aiCooldown.has(msg.from)) {
         msg.reply('⌛ Por favor espera 20 segundos entre consultas.');
@@ -120,27 +98,26 @@ async function handleIACommand(msg) {
     const pregunta = msg.body.slice(4).trim();
 
     try {
-        const respuesta = await consultarDeepSeek(pregunta); // Llama a la nueva función
+        const respuesta = await consultarDeepSeek(pregunta);
         msg.reply(` *Respuesta IA:*\n\n${respuesta}`);
     } catch (error) {
-        console.error('Error DeepSeek:', error); // Maneja errores de DeepSeek
+        console.error('Error DeepSeek:', error);
         msg.reply('⚠️ Error al procesar tu consulta. Intenta más tarde.');
     }
 }
 
-// Función para consultar DeepSeek (nueva función - AHORA CORRECTA CON FETCH)
 async function consultarDeepSeek(pregunta) {
-    const response = await fetch('https://api.deepseek.ai/v1/chat/completions', { // URL de DeepSeek (CORRECTA)
+    const response = await fetch('https://api.deepseek.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}` // API Key desde variables de entorno (¡IMPORTANTE!)
+            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
         },
         body: JSON.stringify({
-            model: 'deepseek-chat', // Modelo de DeepSeek (puedes cambiarlo según la documentación)
-            messages: [{ role: 'user', content: pregunta }], // Formato de mensaje para DeepSeek
-            max_tokens: 300, // Ajusta los parámetros según la documentación de Deepseek
-            temperature: 0.3, // Ajusta los parámetros según la documentación de Deepseek
+            model: 'deepseek-chat',
+            messages: [{ role: 'user', content: pregunta }],
+            max_tokens: 300,
+            temperature: 0.3,
         }),
     });
 
@@ -153,11 +130,8 @@ async function consultarDeepSeek(pregunta) {
     let respuesta = data.choices[0].message.content;
 
     return respuesta.length > 1500 ? respuesta.substring(0, 1497) + '...' : respuesta;
-
 }
 
-
-// Función para manejar selección de beneficios (SIN CAMBIOS)
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
 
@@ -169,14 +143,12 @@ function handleBenefitSelection(msg, text) {
 
     const benefit = benefits[number - 1];
     if (benefit) {
-        msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
+        msg.reply(`*<span class="math-inline">\{benefit\.title\}\*\\n\\n</span>{benefit.content}`);
     }
     waitingForBenefitNumber.delete(msg.from);
 }
 
-// Función para manejar comandos de cotizadores (SIN CAMBIOS)
-
-const userCotizadorMap = new Map(); // Mapa para rastrear cotizadores asignados a usuarios
+const userCotizadorMap = new Map();
 
 function handleCotizadores(msg) {
     const user = msg.from;
@@ -205,7 +177,7 @@ function handleCotizadores(msg) {
     assigned.available = false;
     assigned.assignedTo = user;
 
-    userCotizadorMap.set(user, assigned.id); // Asignación y registro del cotizador
+    userCotizadorMap.set(user, assigned.id);
 
     const cotizadorIndex = cotizadores.findIndex(c => c.id === assigned.id);
 
@@ -216,8 +188,8 @@ function handleCotizadores(msg) {
 
     saveData();
 
-    let mensaje = `*Cotizadores Mejora Tu Salud* 🏥\n\n`;
-    mensaje += `💻 Webpage: https://vendor.tu7.cl/account\n\n`;
+    let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
+    mensaje += ` Webpage: https://vendor.tu7.cl/account\n\n`;
 
     mensaje += `*Cotizador asignado:* ${assigned.id} ✅\n`;
 
@@ -250,13 +222,12 @@ async function handleBenefits(msg) {
     await client.sendMessage(msg.from, { text: message });
 }
 
-// Función para enviar mensaje de turnos (SIN CAMBIOS)
 function sendTurnosMessage(msg) {
-    const response = `📅 *Información sobre Turnos* 📅\n\n` +
+    const response = ` *Información sobre Turnos* \n\n` +
         `• La toma de turnos se realiza los SÁBADO a las 18:00 hrs 🇨🇱\n` +
         `• Cada ejecutivo debe tomar 4 turnos en días distintos\n` +
         `• Revisar horario con tu coordinador\n` +
-        `• Los leads se trabajan el día de carga 📝\n\n` +
+        `• Los leads se trabajan el día de carga \n\n` +
         `Link para turnos: https://1drv.ms/x/s!AjucDJ3soG62hJh0vkRRsYyH0sDOzw?e=uet2cJ`;
 
     msg.reply(response);
