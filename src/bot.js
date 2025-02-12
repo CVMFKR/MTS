@@ -239,13 +239,17 @@ function handleCotizadores(msg) {
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
 function handleBenefits(msg) {
-    const buttons = [ /* ... tus botones ... */ ];
+    const buttons = benefits.map((benefit, index) => ({ // <-- Corrección importante
+        button: { text: benefit.title.trim() }, // <-- Usar benefit.title.trim()
+        id: (index + 1).toString() // <-- ID como string
+    }));
+
     const sections = [{ title: 'Selecciona una opción:', rows: buttons }];
 
     console.log("Botones:", buttons);
     console.log("Secciones:", sections);
 
-    client.sendMessage(msg.from, { // <-- Usando msg.from
+    client.sendMessage(msg.from, {
         text: 'Selecciona una opción (responde con el número):',
         footer: 'Responde con el número para más detalles.',
         buttons: sections,
