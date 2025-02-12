@@ -214,7 +214,7 @@ function handleCotizadores(msg) {
     saveData();
 
     let mensaje = `*Cotizadores Mejora Tu Salud*\n\n`;
-    mensaje += `[Iniciar Sesión](https://vendor.tu7.cl/account)\n\n`;
+    mensaje += `*Webpage para cotizar:* https://vendor.tu7.cl/account\n\n`;
 
     mensaje += `Cotizador asignado: ${assigned.id} ✅\n`;
     mensaje += `⭐ Usuario: ${assigned.user}\n`;
