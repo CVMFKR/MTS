@@ -52,6 +52,15 @@ client.on('auth_failure', () => {
     console.log('⚠️ Error de autenticación');
 });
 
+client.on('message_button_reply', async msg => {
+    const selectedOption = msg.selectedButtonId;
+    const benefit = benefits[parseInt(selectedOption) - 1];
+
+    if (benefit) {
+        msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
+    }
+});
+
 client.on('message', async msg => {
     let text = msg.body.toLowerCase().trim(); // Convertir a minúsculas y eliminar espacios
 
@@ -240,15 +249,23 @@ function handleCotizadores(msg) {
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
 function handleBenefits(msg) {
-    const options = `Selecciona una opción (responde con el número):\n\n` +
-        `1. CONSALUD 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
-        `2. BANMEDICA 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
-        `3. ESENCIAL 🏥\n` +
-        `4. COLMENA 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
-        `5. VIDA TRES 🏥\n` +  //  ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
-        `6. NUEVA MAS VIDA 🏥`; // ¡Orden cambiado para que coincida con el orden actual de las respuestas (incorrecto)!
+    const buttons = [
+        { button: { text: 'CONSALUD ' }, id: '1' },
+        { button: { text: 'BANMEDICA ' }, id: '2' },
+        { button: { text: 'ESENCIAL ' }, id: '3' },
+        { button: { text: 'COLMENA ' }, id: '4' },
+        { button: { text: 'VIDA TRES ' }, id: '5' },
+        { button: { text: 'NUEVA MAS VIDA ' }, id: '6' },
+    ];
 
-    msg.reply(options);
+    const sections = [{ title: 'Selecciona una opción:', rows: buttons }];
+
+    client.sendMessage(msg.chatId, {
+        text: 'Selecciona una opción (responde con el número):',
+        footer: 'Responde con el número para más detalles.',
+        buttons: sections,
+        sections: sections,
+    });
 }
 
 // Función para enviar mensaje de turnos (SIN CAMBIOS)
