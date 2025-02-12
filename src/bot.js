@@ -139,14 +139,14 @@ function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
 
     if (number < 1 || number > Object.keys(benefits).length) {
-        msg.reply(' Opción inválida. Por favor responde con un número del 1 al ' + Object.keys(benefits).length + '.');
+        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + Object.keys(benefits).length + '.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
 
     const benefit = benefits[number.toString()]; // <-- Convierte el número a cadena
     if (benefit) {
-        msg.reply(`*${benefit.title}*\n\n${escapeHtml(benefit.content)}`); // <-- Escapa el contenido HTML
+        msg.reply(`*${benefit.title}*\n\n${escapeHtml(benefit.content)}`);
     }
     waitingForBenefitNumber.delete(msg.from);
 }
