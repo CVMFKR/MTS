@@ -213,16 +213,17 @@ function handleCotizadores(msg) {
 
     saveData();
 
-    let mensaje = `*Cotizadores Mejora Tu Salud*\n\n`;
-    mensaje += `*Webpage para cotizar:* https://vendor.tu7.cl/account\n\n`;
+    let mensaje = `*Cotizadores Mejora Tu Salud* 🏥\n\n`;
+    mensaje += `💻 Webpage: https://vendor.tu7.cl/account\n\n`;
 
-    mensaje += `Cotizador asignado: ${assigned.id} ✅\n`;
+    mensaje += `*Cotizador asignado:* ${assigned.id} ✅\n`;
+
     mensaje += `⭐ Usuario: ${assigned.user}\n`;
     mensaje += `⭐ Contraseña: ${assigned.password}\n\n`;
     mensaje += `Usa @cotizadoroff para liberarlo! \n\n`;
 
     mensaje += `---------------------------------------\n\n`;
-    mensaje += `Estado de Cotizadores: \n\n`;
+    mensaje += `*Estado de Cotizadores:* \n\n`;
 
     cotizadores.forEach(cotizador => {
         mensaje += `${cotizador.available ? '✅' : '❌'} Cotizador ${cotizador.id}: `;
@@ -230,7 +231,7 @@ function handleCotizadores(msg) {
     });
 
     mensaje += `\n---------------------------------------\n\n`;
-    mensaje += `Cotizador BICEVIDA: \n`;
+    mensaje += `*Cotizador BICEVIDA:* \n`;
     mensaje += `- Usuario: ${bicevida.user}\n`;
     mensaje += `- Contraseña: ${bicevida.password}`;
 
