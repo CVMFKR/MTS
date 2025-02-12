@@ -137,13 +137,9 @@ function escapeHtml(unsafe) {
 
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
-    let benefitCount = 0;
-    for (const key in benefits) {
-        benefitCount++;
-    }
 
-    if (number < 1 || number > benefitCount) {
-        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + benefitCount + '.');
+    if (number < 0 || number >= Object.keys(benefits).length) { // <-- Ajusta el rango
+        msg.reply('❌ Opción inválida. Por favor responde con un número del 0 al ' + (Object.keys(benefits).length - 1) + '.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
@@ -223,10 +219,8 @@ function handleCotizadores(msg) {
 
 function handleBenefits(msg) {
     let options = "Selecciona una opción (responde con el número):\n\n";
-    let i = 1;
     for (const key in benefits) {
-        options += `${i}. ${benefits[key].title}\n`;
-        i++;
+        options += `${key}. ${benefits[key].title}\n`; // <-- Usa la clave directamente
     }
     msg.reply(options);
 }
