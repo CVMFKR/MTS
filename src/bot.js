@@ -48,14 +48,6 @@ client.on('auth_failure', () => {
     console.log('⚠️ Error de autenticación');
 });
 
-client.on('message_button_reply', async msg => {
-    const selectedOption = msg.selectedButtonId;
-    const benefit = benefits[parseInt(selectedOption) - 1];
-
-    if (benefit) {
-        msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
-    }
-});
 
 client.on('message', async msg => {
     console.log("Mensaje recibido:", msg.body); // Para depuración
@@ -157,13 +149,13 @@ async function consultarDeepSeek(pregunta) {
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
 
-    if (number < 1 || number > 6) {
-        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al 6.');
+    if (number < 1 || number > benefits.length) {
+        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + benefits.length + '.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
 
-    const benefit = benefits[number - 1]; // ¡Aquí restamos 1 al número!
+    const benefit = benefits[number - 1];
     if (benefit) {
         msg.reply(`*${benefit.title}*\n\n${benefit.content}`);
     }
@@ -238,23 +230,14 @@ function handleCotizadores(msg) {
 }
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
-function handleBenefits(msg) {
-    const buttons = benefits.map((benefit, index) => ({ // <-- Corrección importante
-        button: { text: benefit.title.trim() }, // <-- Usar benefit.title.trim()
-        id: (index + 1).toString() // <-- ID como string
-    }));
+async function handleBenefits(msg) {
+    const message = `Selecciona una opción (responde con el número):\n\n`;
 
-    const sections = [{ title: 'Selecciona una opción:', rows: buttons }];
-
-    console.log("Botones:", buttons);
-    console.log("Secciones:", sections);
-
-    client.sendMessage(msg.from, {
-        text: 'Selecciona una opción (responde con el número):',
-        footer: 'Responde con el número para más detalles.',
-        buttons: sections,
-        sections: sections,
+    benefits.forEach((benefit, index) => {
+        message += `${index + 1}. ${benefit.title.trim()}\n`;
     });
+
+    await client.sendMessage(msg.from, { text: message });
 }
 
 // Función para enviar mensaje de turnos (SIN CAMBIOS)
