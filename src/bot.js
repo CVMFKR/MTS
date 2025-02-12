@@ -242,7 +242,10 @@ function handleBenefits(msg) {
     const buttons = [ /* ... tus botones ... */ ];
     const sections = [{ title: 'Selecciona una opción:', rows: buttons }];
 
-    client.sendMessage(msg.from, { // <-- Usa msg.from aquí
+    console.log("Botones:", buttons);
+    console.log("Secciones:", sections);
+
+    client.sendMessage(msg.from, { // <-- Usando msg.from
         text: 'Selecciona una opción (responde con el número):',
         footer: 'Responde con el número para más detalles.',
         buttons: sections,
