@@ -60,7 +60,6 @@ client.on('message', async msg => {
 
     if (msg.body.includes('@beneficios')) {
         console.log("Comando @beneficios detectado");
-        msg.reply("¡Mensaje de prueba!"); // Mensaje de prueba
         return;
     }
 
