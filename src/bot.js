@@ -137,14 +137,19 @@ function escapeHtml(unsafe) {
 
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
+    let benefitCount = 0;
+    for (const key in benefits) {
+        benefitCount++;
+    }
 
-    if (number < 1 || number > Object.keys(benefits).length) {
-        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + Object.keys(benefits).length + '.');
+    if (number < 1 || number > benefitCount) {
+        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + benefitCount + '.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
 
-    const benefit = benefits[number.toString()]; // <-- Convierte el número a cadena
+    const benefitKey = number.toString();
+    const benefit = benefits[benefitKey];
     if (benefit) {
         msg.reply(`*${benefit.title}*\n\n${escapeHtml(benefit.content)}`);
     }
