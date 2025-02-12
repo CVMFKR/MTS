@@ -239,18 +239,10 @@ function handleCotizadores(msg) {
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
 function handleBenefits(msg) {
-    const buttons = [
-        { button: { text: 'CONSALUD ' }, id: '1' },
-        { button: { text: 'BANMEDICA ' }, id: '2' },
-        { button: { text: 'ESENCIAL ' }, id: '3' },
-        { button: { text: 'COLMENA ' }, id: '4' },
-        { button: { text: 'VIDA TRES ' }, id: '5' },
-        { button: { text: 'NUEVA MAS VIDA ' }, id: '6' },
-    ];
-
+    const buttons = [ /* ... tus botones ... */ ];
     const sections = [{ title: 'Selecciona una opción:', rows: buttons }];
 
-    client.sendMessage(msg.chatId, {
+    client.sendMessage(msg.from, { // <-- Usa msg.from aquí
         text: 'Selecciona una opción (responde con el número):',
         footer: 'Responde con el número para más detalles.',
         buttons: sections,
