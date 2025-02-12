@@ -231,7 +231,7 @@ function handleCotizadores(msg) {
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
 async function handleBenefits(msg) {
-    const message = `Selecciona una opción (responde con el número):\n\n`;
+    let message = `Selecciona una opción (responde con el número):\n\n`; // <-- Cambia const a let
 
     benefits.forEach((benefit, index) => {
         message += `${index + 1}. ${benefit.title.trim()}\n`;
