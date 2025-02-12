@@ -244,16 +244,9 @@ function handleCotizadores(msg) {
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
 async function handleBenefits(msg) {
-    let message = `
-¡Hola!  Selecciona una opción (responde con el número):
+    let message = "¡Hola! Selecciona una opción (responde con el número):\n\n";
 
-1. ⚕️ BANMEDICA
-2. ⚕️ CONSALUD
-3. ⚕️ ESENCIAL
-4. ⚕️ NUEVA MAS VIDA
-5. ⚕️ COLMENA
-6. ⚕️ VIDA TRES
-    `;
+    message += benefits.map((benefit, index) => `${index + 1}. ${benefit.title.trim()}`).join('\n');
 
     await client.sendMessage(msg.from, { text: message });
 }
