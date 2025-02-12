@@ -231,11 +231,16 @@ function handleCotizadores(msg) {
 
 // Función para manejar el comando de beneficios (SIN CAMBIOS)
 async function handleBenefits(msg) {
-    let message = `Selecciona una opción (responde con el número):\n\n`; // <-- Cambia const a let
+    let message = `
+¡Hola!  Selecciona una opción (responde con el número):
 
-    benefits.forEach((benefit, index) => {
-        message += `${index + 1}. ${benefit.title.trim()}\n`;
-    });
+1. ⚕️ BANMEDICA
+2. ⚕️ CONSALUD
+3. ⚕️ ESENCIAL
+4. ⚕️ NUEVA MAS VIDA
+5. ⚕️ COLMENA
+6. ⚕️ VIDA TRES
+    `;
 
     await client.sendMessage(msg.from, { text: message });
 }
