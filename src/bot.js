@@ -2,7 +2,6 @@ require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
-// ELIMINADO: Importación incorrecta de OpenAI, ya no la necesitamos para Deepseek
 const schedule = require('node-schedule');
 const { cotizadores, bicevida, saveData } = require('./data/cotizadoresData');
 const benefits = require('./data/benefitsData');
@@ -10,15 +9,12 @@ const benefits = require('./data/benefitsData');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ELIMINADO: Configuración de la API de DeepSeek con Configuration de OpenAI (¡INCORRECTO!)
-// Ahora usaremos fetch directamente, la API Key se usará en la función consultarDeepSeek
-
-// Mapa para rastrear estado de los usuarios
 const waitingForBenefitNumber = new Map();
 const aiCooldown = new Set();
 
+// Configuración del cliente de WhatsApp Web
 const client = new Client({
-    authStrategy: new LocalAuth({ dataPath: '' }),
+    authStrategy: new LocalAuth({ dataPath: '' }), // No necesitas especificar dataPath en Railway
     puppeteer: {
         headless: true,
         args: [
@@ -28,19 +24,19 @@ const client = new Client({
             '--single-process',
             '--no-zygote'
         ],
-        executablePath: process.env.CHROMIUM_PATH || null
+        executablePath: process.env.CHROMIUM_PATH || null // Importante para Railway
     }
-
 });
 
-// Configuración del servidor web
-app.get('/', (req, res) => res.send(' Bot en funcionamiento!'));
+// Configuración del servidor web (para el QR y mantener el bot activo)
+app.get('/', (req, res) => res.send('Bot en funcionamiento!'));
 app.listen(port, () => console.log(`Servidor iniciado en puerto ${port}`));
 
-// Manejo de QR
+// Eventos del cliente de WhatsApp Web
 client.on('qr', qr => {
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr)}`;
-    console.log(' Escanea este QR:', qrImageUrl);
+    console.log('Escanea este QR:', qrImageUrl);
+    // En Railway, podrías mostrar esta URL en un panel web para facilitar el escaneo
 });
 
 client.on('ready', () => {
@@ -62,20 +58,14 @@ client.on('message_button_reply', async msg => {
 });
 
 client.on('message', async msg => {
-    let text = msg.body.toLowerCase().trim(); // Convertir a minúsculas y eliminar espacios
+    console.log("Mensaje recibido:", msg.body); // Para depuración
+    let text = msg.body.toLowerCase().trim();
+    text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Eliminar acentos
-
-    // Comando IA
-    if (text.startsWith('@ia ')) {
-        handleIACommand(msg);
-        return;
-    }
-
-    // Comando para obtener ID del grupo
-    if (text.includes('@groupid')) {
-        const chat = await msg.getChat();
-        msg.reply(` ID del grupo: ${chat.id._serialized}`);
+    if (text.includes('@beneficios')) {
+        console.log("Comando @beneficios detectado"); // Para depuración
+        handleBenefits(msg);
+        waitingForBenefitNumber.set(msg.from, true);
         return;
     }
 
