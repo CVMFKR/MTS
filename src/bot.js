@@ -46,21 +46,15 @@ client.on('auth_failure', () => {
 });
 
 client.on('message', async msg => {
+    const text = msg.body.toLowerCase().trim();
     console.log("Mensaje recibido:", msg.body);
-    console.log("Remitente:", msg.from);
-    console.log("ID del chat:", msg.chatId);
-    console.log("¿Incluye @beneficios?:", msg.body.includes('@beneficios'));
-    console.log("Tipo de mensaje:", msg.type);
-    console.log("Estado del chat:", await msg.getChat());
 
-    if (msg.body === '@beneficios') { // <-- Condición estricta (===)
+    if (text === '@beneficios') { // <-- Condición estricta (===)
         console.log("Comando @beneficios detectado");
         await handleBenefits(msg); // <-- Llama a handleBenefits con await
+        waitingForBenefitNumber.set(msg.from, true); // <-- Mueve esta línea aquí
         return;
     }
-
-    let text = msg.body.toLowerCase().trim();
-    text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     if (!isNaN(text) && waitingForBenefitNumber.get(msg.from)) {
         handleBenefitSelection(msg, text);
@@ -135,13 +129,13 @@ async function consultarDeepSeek(pregunta) {
 function handleBenefitSelection(msg, text) {
     const number = parseInt(text);
 
-    if (number < 1 || number > benefits.length) {
-        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + benefits.length + '.');
+    if (number < 1 || number > Object.keys(benefits).length) { // <-- Cambio importante aquí
+        msg.reply('❌ Opción inválida. Por favor responde con un número del 1 al ' + Object.keys(benefits).length + '.');
         waitingForBenefitNumber.delete(msg.from);
         return;
     }
 
-    const benefit = benefits[number - 1];
+    const benefit = benefits[number]; // <-- Y aquí
     if (benefit) {
         msg.reply(`*<span class="math-inline">\{benefit\.title\}\*\\n\\n</span>{benefit.content}`);
     }
@@ -213,28 +207,23 @@ function handleCotizadores(msg) {
     msg.reply(mensaje);
 }
 
-// Función para manejar el comando de beneficios (SIN CAMBIOS)
-async function handleBenefits(msg) {
-    let message = "¡Hola! Selecciona una opción (responde con el número):\n\n";
+function handleBenefits(msg) {
+    const options = `Selecciona una opción (responde con el número):\n\n` +
+        Object.keys(benefits).map(key => `${key}. ${benefits[key].title}`).join('\n');
 
-    message += benefits.map((benefit, index) => `${index + 1}. ${benefit.title.trim()}`).join('\n');
-
-    await client.sendMessage(msg.from, { text: message });
+    msg.reply(options);
 }
 
 function sendTurnosMessage(msg) {
     const response = ` *Información sobre Turnos* \n\n` +
-        `• La toma de turnos se realiza los SÁBADO a las 18:00 hrs 🇨🇱\n` +
-        `• Cada ejecutivo debe tomar 4 turnos en días distintos\n` +
-        `• Revisar horario con tu coordinador\n` +
-        `• Los leads se trabajan el día de carga \n\n` +
-        `Link para turnos: https://1drv.ms/x/s!AjucDJ3soG62hJh0vkRRsYyH0sDOzw?e=uet2cJ`;
+        `• La toma de turnos se realiza los SÁBADO a las 18:00 hrs 🇨🇱
+        • Cada ejecutivo debe tomar 4 turnos en días distintos
+        • Revisar horario con tu coordinador
+        • Los leads se trabajan el día de carga 
+
+        Link para turnos: https://1drv.ms/x/s!AjucDJ3soG62hJh0vkRRsYyH0sDOzw?e=uet2cJ`;
 
     msg.reply(response);
 }
-
-// Función para manejar comandos de cotizadores (REPETIDA - ELIMINAR LA DUPLICADA)
-// (He dejado solo una versión de handleCotizadores, las dos versiones hacían lo mismo)
-
 
 client.initialize();
