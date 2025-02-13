@@ -1,6 +1,6 @@
 const benefits = [ // ¡OJO! He cambiado `benefits` a un ARRAY en lugar de un OBJETO numerado.
     {
-        title: "BANMEDICA ", // 1. BANMEDICA
+        title: "🏥 *BANMEDICA*", // 1. BANMEDICA
         content: `Banmédica ofrece planes personalizados con convenios destacados en Santiago, como Clínica Dávila Vespucio (ubicaciones Recoleta o La Florida), Santa María e Indisa. Fuertes alianzas en regiones con Clínica FUSAT y Ciudad del Mar. Además, cuenta con buenos convenios con centros médicos como Vida Integra y Centros Médicos Santa María.
 
 ⭐Beneficios gratuitos:
@@ -10,7 +10,7 @@ const benefits = [ // ¡OJO! He cambiado `benefits` a un ARRAY en lugar de un OB
 - Cobertura de un 40%  Prestaciones Restringidas en centros preferentes.`
     },
     {
-        title: "CONSALUD ", // 2. CONSALUD
+        title: "🏥 *CONSALUD*", // 2. CONSALUD
         content: `Consalud, parte de la Cámara Chilena de la Construcción, ofrece convenios destacados en Santiago con RedSalud (Santiago, Providencia y Vitacura), Clínica Indisa, Bupa y Católica. En regiones: RedSalud Iquique hasta Magallanes incluyendo Elqui, Valparaíso y Rancagua. También cuenta con alianzas en Andes Salud Puerto Montt y Concepción. Ofrece chequeos preventivos gratuitos para mantener tu salud óptima y exámenes Costo Cero a través del programa Bonos Costo Cero.
 
 ⭐ Beneficios gratuitos:
@@ -20,7 +20,7 @@ const benefits = [ // ¡OJO! He cambiado `benefits` a un ARRAY en lugar de un OB
 - Descuentos en ópticas.`
     },
     {
-        title: "ESENCIAL ", // 3. ESENCIAL
+        title: "🏥 *ESENCIAL*", // 3. ESENCIAL
         content: `Isapre Esencial, parte del Grupo Alemana, ofrece planes respaldados por la experiencia y los fuertes especialistas de Clínica Alemana. Destaca por convenios en Santiago con chequeos preventivos y cobertura CAEC y GES. En regiones: Valdivia, Temuco y Osorno. Ofrece coberturas hasta el 100% en diversas prestaciones médicas. Además, incluye beneficios gratuitos como orientación médica 24/7.
 
 ⭐Beneficios gratuitos:
@@ -30,7 +30,7 @@ const benefits = [ // ¡OJO! He cambiado `benefits` a un ARRAY en lugar de un OB
 - Cobertura en todas las prestaciones médicas en Clínica Alemana Santiago, con o sin código FONASA.`
     },
     {
-        title: "NUEVA MAS VIDA ", // 4. NUEVA MAS VIDA
+        title: "🏥 *NUEVA MAS VIDA*", // 4. NUEVA MAS VIDA
         content: `Nueva Masvida, parte de Nexus Company, ofrece planes con bajos costos y beneficios gratuitos. En Santiago, destacan convenios con Bupa, Clínica Indisa y Clínica Meds. En regiones: Clínica Bupa Reñaca, Lircay, Bio Bio e Isamedica. Además, cuenta con convenios con UC Christus. Ofrece descuentos en Farmacias Ahumada y acceso a exámenes de laboratorio sin costo. No tiene topes en psicología para libre elección.
 
 ⭐Beneficios gratuitos:
@@ -40,7 +40,7 @@ const benefits = [ // ¡OJO! He cambiado `benefits` a un ARRAY en lugar de un OB
 - Descuentos en ópticas.`
     },
     {
-        title: "COLMENA ", // 5. COLMENA
+        title: "🏥 *COLMENA*", // 5. COLMENA
         content: `Isapre Colmena ofrece convenios destacados con RedSalud, Clínica Dávila Vespucio y Hospital Clínico UC Christus en Santiago. En regiones, cuenta con clínicas asociadas a RedSalud. Destaca por su buena cobertura psicológica sin topes en libre elección. Ofrece beneficios gratuitos como orientación médica telefónica 24/7 (Colmena Doctor), descuentos en Farmacias Salcobrand y exámenes sin costo a través del programa Costo Cero.
 
 ⭐Beneficios gratuitos:
@@ -50,7 +50,7 @@ const benefits = [ // ¡OJO! He cambiado `benefits` a un ARRAY en lugar de un OB
 - Descuentos en ópticas.`
     },
     {
-        title: "VIDA TRES ", // 6. VIDA TRES
+        title: "🏥 *VIDA TRES*", // 6. VIDA TRES
         content: `Isapre Vida Tres ofrece planes personalizados con convenios en Santiago (Clínica Dávila, Santa María e Indisa) y regiones (FUSAT y Ciudad del Mar). Destaca por más de 930 prestaciones médicas adicionales, cobertura dental hasta 80%, descuentos en Farmacias Salcobrand y exámenes preventivos gratuitos.
 
 ⭐Beneficios gratuitos:
