@@ -155,74 +155,108 @@ function handleBenefitSelection(msg, text) {
 const userCotizadorMap = new Map();
 
 function handleCotizadores(msg) {
-    const user = msg.from;
+  const user = msg.from;
+  const text = msg.body.trim().toLowerCase();
 
-    if (msg.body.includes('@cotizadoroff')) {
-        const cotizadorId = userCotizadorMap.get(user);
-        if (cotizadorId) {
-            const cotizador = cotizadores.find(c => c.id === cotizadorId);
-            if (cotizador) {
-                cotizador.available = true;
-                cotizador.assignedTo = null;
-                saveData();
-                msg.reply(`✅ Cotizador ${cotizador.id} liberado correctamente!`);
-                userCotizadorMap.delete(user);
-            }
-        }
-        return;
+  // ——— OFF con número “@cotizadoroff 2” o “@cotizador2off”
+  const offMatch = text.match(/^@cotizador(?:off\s*([1-3])|([1-3])off)$/);
+  if (offMatch) {
+    const id = parseInt(offMatch[1] ?? offMatch[2], 10);
+    const cot = cotizadores.find(c => c.id === id);
+    if (!cot) {
+      return msg.reply(`❌ No existe el cotizador ${id}.`);
     }
-
-    const available = cotizadores.filter(c => c.available);
-    if (available.length === 0) {
-        return msg.reply('⚠️ Lo siento, no hay cotizadores disponibles en este momento.');
+    if (cot.available) {
+      return msg.reply(`⚠️ El cotizador ${id} ya está libre.`);
     }
-
-    const assigned = available[0];
-    assigned.available = false;
-    assigned.assignedTo = user;
-
-    userCotizadorMap.set(user, assigned.id);
-
-    const cotizadorIndex = cotizadores.findIndex(c => c.id === assigned.id);
-
-    if (cotizadorIndex !== -1) {
-        cotizadores[cotizadorIndex].available = false;
-        cotizadores[cotizadorIndex].assignedTo = user;
+    // liberamos
+    cot.available = true;
+    cot.assignedTo = null;
+    // quitamos de cualquier userCotizadorMap que lo tuviera
+    for (const [u, assignedId] of userCotizadorMap.entries()) {
+      if (assignedId === id) userCotizadorMap.delete(u);
     }
+    saveData();
+    return msg.reply(`✅ Cotizador ${id} liberado por *${user}*.`);
+  }
 
+  // ——— OFF genérico “@cotizadoroff”
+  if (text === '@cotizadoroff') {
+    const currentId = userCotizadorMap.get(user);
+    if (!currentId) {
+      return msg.reply('❌ No tienes ningún cotizador asignado.');
+    }
+    const cot = cotizadores.find(c => c.id === currentId);
+    cot.available = true;
+    cot.assignedTo = null;
+    userCotizadorMap.delete(user);
+    saveData();
+    return msg.reply(`✅ Cotizador ${currentId} liberado.`);
+  }
+
+  // ——— ON específico “@cotizador2”
+  const onMatch = text.match(/^@cotizador([1-3])$/);
+  if (onMatch) {
+    const id = parseInt(onMatch[1], 10);
+
+    if (userCotizadorMap.has(user)) {
+      return msg.reply(`❌ Ya tienes asignado el cotizador ${userCotizadorMap.get(user)}. Usa @cotizadoroff para liberarlo primero.`);
+    }
+    const cot = cotizadores.find(c => c.id === id);
+    if (!cot) {
+      return msg.reply(`❌ No existe el cotizador ${id}.`);
+    }
+    if (!cot.available) {
+      return msg.reply(`⚠️ El cotizador ${id} ya está en uso.`);
+    }
+    // asignar
+    cot.available = false;
+    cot.assignedTo = user;
+    userCotizadorMap.set(user, id);
     saveData();
 
-    let mensaje = `*Cotizadores Mejora Tu Salud* \n\n`;
-    mensaje += ` Webpage: https://vendor.tu7.cl/account\n\n`;
+    // enviamos el mensaje detallado
+    return sendCotizadorMessage(msg, cot);
+  }
 
-    mensaje += `*Cotizador asignado:* ${assigned.id} ✅\n`;
+  // ——— ON genérico “@cotizador”
+  if (text === '@cotizador') {
+    if (userCotizadorMap.has(user)) {
+      return msg.reply(`❌ Ya tienes asignado el cotizador ${userCotizadorMap.get(user)}. Usa @cotizadoroff para liberarlo.`);
+    }
+    const free = cotizadores.find(c => c.available);
+    if (!free) {
+      return msg.reply('⚠️ Lo siento, no hay cotizadores disponibles ahora.');
+    }
+    free.available = false;
+    free.assignedTo = user;
+    userCotizadorMap.set(user, free.id);
+    saveData();
 
-    mensaje += `⭐ Usuario: ${assigned.user}\n`;
-    mensaje += `⭐ Contraseña: ${assigned.password}\n\n`;
-    mensaje += `Usa @cotizadoroff para liberarlo! \n\n`;
+    return sendCotizadorMessage(msg, free);
+  }
 
-    mensaje += `---------------------------------------\n\n`;
-    mensaje += `*Estado de Cotizadores:* \n\n`;
-
-    cotizadores.forEach(cotizador => {
-        mensaje += `${cotizador.available ? '✅' : '❌'} Cotizador ${cotizador.id}: `;
-        mensaje += `${cotizador.available ? 'Disponible' : 'Ocupado'}\n`;
-    });
-
-    mensaje += `\n---------------------------------------\n\n`;
-    mensaje += `*Cotizador BICEVIDA:* \n`;
-    mensaje += `- Usuario: ${bicevida.user}\n`;
-    mensaje += `- Contraseña: ${bicevida.password}`;
-
-    msg.reply(mensaje);
+  // No es comando de cotizadores: salir
 }
 
-function handleBenefits(msg) {
-    let options = "Selecciona una opción (responde con el número):\n\n";
-    for (const key in benefits) {
-        options += `${key}. ${benefits[key].title}\n`; // <-- Usa la clave directamente
-    }
-    msg.reply(options);
+function sendCotizadorMessage(msg, assigned) {
+  let mensaje = `*Cotizadores Mejora Tu Salud*\n\n`;
+  mensaje += `Webpage: https://vendor.tu7.cl/account\n\n`;
+  mensaje += `*Cotizador asignado:* ${assigned.id} ✅\n\n`;
+  mensaje += `⭐ Usuario: ${assigned.user}\n`;
+  mensaje += `⭐ Contraseña: ${assigned.password}\n\n`;
+  mensaje += `Usa @cotizadoroff para liberarlo!\n\n`;
+  mensaje += `---------------------------------------\n\n`;
+  mensaje += `*Estado de Cotizadores:*\n\n`;
+  cotizadores.forEach(c => {
+    mensaje += `${c.available ? '✅' : '❌'} Cotizador ${c.id}: ${c.available ? 'Disponible' : 'Ocupado'}\n`;
+  });
+  mensaje += `\n---------------------------------------\n\n`;
+  mensaje += `*Cotizador BICEVIDA:*\n`;
+  mensaje += `- Usuario: ${bicevida.user}\n`;
+  mensaje += `- Contraseña: ${bicevida.password}`;
+
+  msg.reply(mensaje);
 }
 
 function sendTurnosMessage(msg) {
