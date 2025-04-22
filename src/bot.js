@@ -45,40 +45,74 @@ client.on('auth_failure', () => {
     console.log('⚠️ Error de autenticación');
 });
 
-client.on('message', async msg => {
+async function handleBenefits(msg) {
+    // Construye la lista de opciones
+    let options = "Selecciona una opción (responde con el número):\n\n";
+    benefits.forEach((b, idx) => {
+      options += `${idx}. ${b.title}\n`;
+    });
+    // Envía la lista
+    await msg.reply(options);
+  }
+  
+  function handleBenefitSelection(msg, text) {
+    const idx = parseInt(text, 10);
+    // Valida rango
+    if (isNaN(idx) || idx < 0 || idx >= benefits.length) {
+      waitingForBenefitNumber.delete(msg.from);
+      return msg.reply(`❌ Opción inválida. Escribe un número entre 0 y ${benefits.length - 1}.`);
+    }
+    // Muestra el detalle
+    const b = benefits[idx];
+    msg.reply(`*${b.title}*\n\n${b.content}`);
+    waitingForBenefitNumber.delete(msg.from);
+  }
+
+  client.on('message', async msg => {
     const text = msg.body.toLowerCase().trim();
     console.log("Mensaje recibido:", msg.body);
-
-    if (text === '@beneficios') { // <-- Condición estricta (===)
-        console.log("Comando @beneficios detectado");
-        await handleBenefits(msg); // <-- Llama a handleBenefits con await
-        waitingForBenefitNumber.set(msg.from, true); // <-- Mueve esta línea aquí
-        return;
+  
+    // ── 1) Comando @beneficios ──
+    if (text.startsWith('@beneficios')) {
+      console.log("Comando @beneficios detectado");
+      await handleBenefits(msg);
+      waitingForBenefitNumber.set(msg.from, true);
+      return;
     }
-
+  
+    // ── 2) Respuesta numérica tras @beneficios ──
     if (!isNaN(text) && waitingForBenefitNumber.get(msg.from)) {
-        handleBenefitSelection(msg, text);
-        return;
+      handleBenefitSelection(msg, text);
+      return;
     }
-
-    if (text.includes('@cotizador')) {
-        handleCotizadores(msg);
+  
+    // ── 3) Comandos de cotizadores ──
+    //    Cualquier texto que empiece con "@cotizador" entra al handler
+    if (text.startsWith('@cotizador')) {
+      handleCotizadores(msg);
+      return;
     }
-
-    if (text.includes('@turnos')) {
-        sendTurnosMessage(msg);
+  
+    // ── 4) Comando @turnos ──
+    if (text.startsWith('@turnos')) {
+      sendTurnosMessage(msg);
+      return;
     }
-
+  
+    // ── 5) Liberar todos los cotizadores ──
     if (text === '@liberarcotizador') {
-        cotizadores.forEach(cotizador => {
-            cotizador.available = true;
-            cotizador.assignedTo = null;
-        });
-        saveData();
-        msg.reply('¡Todos los cotizadores han sido liberados!');
-        return;
+      cotizadores.forEach(c => {
+        c.available = true;
+        c.assignedTo = null;
+      });
+      saveData();
+      msg.reply('¡Todos los cotizadores han sido liberados!');
+      return;
     }
-});
+  
+    // (Si más adelante añades comandos, agrégalos aquí con el mismo patrón)
+  });
+  
 
 async function handleIACommand(msg) {
     if (aiCooldown.has(msg.from)) {
@@ -133,23 +167,6 @@ function escapeHtml(unsafe) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-}
-
-function handleBenefitSelection(msg, text) {
-    const number = parseInt(text);
-
-    if (number < 0 || number >= Object.keys(benefits).length) { // <-- Ajusta el rango
-        msg.reply('❌ Opción inválida. Por favor responde con un número del 0 al ' + (Object.keys(benefits).length - 1) + '.');
-        waitingForBenefitNumber.delete(msg.from);
-        return;
-    }
-
-    const benefitKey = number.toString();
-    const benefit = benefits[benefitKey];
-    if (benefit) {
-        msg.reply(`*${benefit.title}*\n\n${escapeHtml(benefit.content)}`);
-    }
-    waitingForBenefitNumber.delete(msg.from);
 }
 
 const userCotizadorMap = new Map();
