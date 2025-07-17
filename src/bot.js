@@ -4,6 +4,7 @@ require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
+const puppeteer = require('puppeteer');
 require('./utils/scheduler'); // Scheduler se auto-inicializa
 
 // Cargamos beneficios y comprobamos estructura
@@ -43,7 +44,7 @@ const client = new Client({
       '--single-process',
       '--no-zygote'
     ],
-    executablePath: process.env.CHROMIUM_PATH || null
+    executablePath: puppeteer.executablePath()
   }
 });
 
