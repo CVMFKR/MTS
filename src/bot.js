@@ -18,7 +18,7 @@ const cotizadoresInfo = {
   2: { user: 'naranjo.paula.ps@gmail.com', password: 'cotizador2' },
   3: { user: 'freyes.mora@gmail.com', password: 'cotizador3' },
 };
-const bicevida = { user: 'biceUserReal', password: 'BicePass!' };
+const bicevida = { user: 'fernanda.lange', password: 'Bice.2020' };
 
 // Estado de slots: false = libre, true = ocupado
 const slots = { 1: false, 2: false, 3: false };
@@ -65,7 +65,7 @@ client.on('message', async msg => {
     console.log('[DEBUG] Se activó comando @beneficios');
     let options = 'Selecciona una opción (responde con el número):\n\n';
     benefits.forEach((b, i) => options += `${i}. ${b.title}\n`);
-    await msg.reply(options);
+    await client.sendMessage(msg.from, options);
     waitingForBenefitNumber.set(msg.from, true);
     return;
   }
