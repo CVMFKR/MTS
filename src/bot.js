@@ -77,7 +77,7 @@ client.on('message', async msg => {
       return msg.reply(`❌ Opción inválida. Escribe un número entre 0 y ${benefits.length - 1}.`);
     }
     const b = benefits[idx];
-    return msg.reply(`*${b.title}*\n\n${b.content}`);
+    return msg.reply(`*${b.title}*\n\n${b.content}\n\n🔗 Más info: ${b.link}`);
   }
 
   // — 2) Asignar cotizador: @cotizador1|2|3
